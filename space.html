@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Space Wars</title>
+	<script type="text/javascript" src="jquery-3.2.1.min.js"></script>
+	<script type="text/javascript" src="jcanvas.min.js"></script>
+	<script type="text/javascript" src="space.js"></script>
+</head>
+<body>
+	<script>
+	$(document).ready(function(){
+		init("space_wars");
+		$("#space_wars").blur(function(){
+			getFocus();
+		});
+	});
+	</script>
+	<canvas id="space_wars" style="border: 1px solid BLACK;">Sorry, your browser needs to be updated first to play this game.</canvas>
+	<div id="debug_texts"></div>
+</body>
+</html>
