@@ -248,14 +248,6 @@ The game has been carefully balanced for extended play sessions:
 
 Level progression is designed to provide 2+ hours of engaging gameplay with gradual difficulty increases every 10,000 points.
 
-## 📝 License
-
-This is a personal project. Feel free to fork, modify, and use it for learning purposes.
-
-## 📝 License
-
-This is a personal project. Feel free to fork, modify, and use it for learning purposes.
-
 ## 👨‍💻 Author
 
 Built as a fun HTML5 Canvas game project demonstrating JavaScript game development fundamentals.

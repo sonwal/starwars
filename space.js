@@ -1,7 +1,7 @@
 var canvasId,canvasObj,height,width;
 var canvasHeight = 90;
 var canvasWidth = 90;
-var hardnessLevelSettings = [2,3,4,5,6,7,8];
+var difficultyLevelSettings = [2,3,4,5,6,7,8]; // Enemy count per difficulty level
 var currentHardnessLevel = 1;
 var minObstacleRadius = 20;
 var maxObstacleRadius = 30;
@@ -51,6 +51,15 @@ var difficultySettings = {
 	"Expert": {speedMultiplier: 1.6, enemyShootChance: 0.9, enemyCount: 1.5}
 };
 var highScore = 0;
+
+// Constants for better maintainability
+var POWERUP_SPAWN_CHANCE = 0.005; // 0.5% chance per frame
+var POSITION_MATCH_THRESHOLD = 1; // Pixel threshold for coordinate matching
+var MOUSE_UPDATE_INTERVAL = 16; // ~60 FPS (1000ms/60)
+var BURST_DURATION = 10000; // 10 seconds
+var MULTI_DURATION = 15000; // 15 seconds
+var SHIELD_DURATION = 8000; // 8 seconds
+var SPEED_DURATION = 12000; // 12 seconds
 
 function init(ele){
 	canvasId = ele;
@@ -364,7 +373,7 @@ function drawObstacles(X){
 	}
 
 	var maxWidth = width;
-	var enemyCount = Math.floor(hardnessLevelSettings[currentHardnessLevel] * difficultySettings[difficultyLevel].enemyCount);
+	var enemyCount = Math.floor(difficultyLevelSettings[currentHardnessLevel] * difficultySettings[difficultyLevel].enemyCount);
 
 	for(var i=0;i<enemyCount;){
 		// get random co-ords.
@@ -603,7 +612,7 @@ function _runShip(){
 			} else {
 				// Update aliens
 				var alienIdx = allAliensDetails.findIndex(function(a){
-					return Math.abs(a.x - allPlanetsDetails[i].x) < 1 && Math.abs(a.y - allPlanetsDetails[i].y) < 1;
+					return Math.abs(a.x - allPlanetsDetails[i].x) < POSITION_MATCH_THRESHOLD && Math.abs(a.y - allPlanetsDetails[i].y) < 1;
 				});
 				if(alienIdx !== -1){
 					var alien = allAliensDetails[alienIdx];
@@ -640,8 +649,8 @@ function _runShip(){
 		// Update and redraw power-ups
 		_updatePowerUps();
 		
-		// Spawn power-ups randomly
-		if(Math.random() < 0.005){
+		// Spawn power-ups randomly (0.5% chance per frame)
+		if(Math.random() < POWERUP_SPAWN_CHANCE){
 			_spawnPowerUp();
 		}
 		
@@ -664,7 +673,7 @@ function _runShip(){
 				level = levelLocal;
 				speedDeviation += 1.5;
 				currentSpeed = speedDeviation * difficultySettings[difficultyLevel].speedMultiplier;
-				if(currentHardnessLevel < hardnessLevelSettings.length - 1){
+				if(currentHardnessLevel < difficultyLevelSettings.length - 1){
 					currentHardnessLevel++;
 				}
 				// Level up notification
@@ -876,15 +885,15 @@ function _collectPowerUp(type){
 			lives++;
 		}
 	} else if(type === 'burst'){
-		activePowerUps.burst = Date.now() + 10000; // 10 seconds
+		activePowerUps.burst = Date.now() + BURST_DURATION;
 		burstMode = true;
 	} else if(type === 'multi'){
-		activePowerUps.multi = Date.now() + 15000; // 15 seconds
+		activePowerUps.multi = Date.now() + MULTI_DURATION;
 		multiDirectionalGun = true;
 	} else if(type === 'shield'){
-		activePowerUps.shield = Date.now() + 8000; // 8 seconds
+		activePowerUps.shield = Date.now() + SHIELD_DURATION;
 	} else if(type === 'speed'){
-		activePowerUps.speed = Date.now() + 12000; // 12 seconds
+		activePowerUps.speed = Date.now() + SPEED_DURATION;
 	}
 	
 	_updateActivePowerUps();
@@ -1202,7 +1211,7 @@ function captureKeysNMouse(){
 			drawShip(targetX);
 			mouseX = shipOuterDetails.x;
 		}
-	}, 16); // ~60 FPS
+	}, MOUSE_UPDATE_INTERVAL); // ~60 FPS for smooth mouse tracking
 	
 	// mouse click for shooting
 	canvasObj.click(function(event){
@@ -1324,7 +1333,7 @@ function _detectCollision(){
 				
 				// Remove the colliding object
 				var alienIdx = allAliensDetails.findIndex(function(a){
-					return Math.abs(a.x - allPlanetsDetails[i].x) < 1 && Math.abs(a.y - allPlanetsDetails[i].y) < 1;
+					return Math.abs(a.x - allPlanetsDetails[i].x) < POSITION_MATCH_THRESHOLD && Math.abs(a.y - allPlanetsDetails[i].y) < 1;
 				});
 				if(alienIdx !== -1){
 					allAliensDetails.splice(alienIdx, 1);
@@ -1569,14 +1578,14 @@ function _updateBullets(){
 				
 				// Remove alien from both arrays
 				var alienIdx = allAliensDetails.findIndex(function(a){
-					return Math.abs(a.x - allPlanetsDetails[j].x) < 1 && Math.abs(a.y - allPlanetsDetails[j].y) < 1;
+					return Math.abs(a.x - allPlanetsDetails[j].x) < POSITION_MATCH_THRESHOLD && Math.abs(a.y - allPlanetsDetails[j].y) < 1;
 				});
 				if(alienIdx !== -1){
 					allAliensDetails.splice(alienIdx, 1);
 				}
 				
 				var solidIdx = solidPlanets.findIndex(function(p){
-					return Math.abs(p.x - allPlanetsDetails[j].x) < 1 && Math.abs(p.y - allPlanetsDetails[j].y) < 1;
+					return Math.abs(p.x - allPlanetsDetails[j].x) < POSITION_MATCH_THRESHOLD && Math.abs(p.y - allPlanetsDetails[j].y) < 1;
 				});
 				if(solidIdx !== -1){
 					solidPlanets.splice(solidIdx, 1);
