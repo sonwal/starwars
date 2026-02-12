@@ -27,6 +27,7 @@ var bullets = [];
 var enemyBullets = [];
 var bulletSpeed = 15;
 var gameRunning = false;
+var gamePaused = false;
 var intervalId = null;
 var aliensDestroyed = 0;
 var lives = 3;
@@ -574,6 +575,9 @@ function _runShip(){
 	var currentSpeed = speedDeviation * difficultySettings[difficultyLevel].speedMultiplier;
 	
 	intervalId = setInterval(function(){
+		// Skip game updates if paused
+		if(gamePaused) return;
+		
 		if(!allPlanetsDetails.length || currentTopValueFrame >= maxHeightFrame)
 			drawObstacles(true);
 
@@ -675,7 +679,7 @@ function introScreenPopup(belowText){
 	var popupX = width/2;
 	var popupY = height/2;
 	var popupWidth = width/1.5;
-	var popupHeight = height/2;
+	var popupHeight = height/1.7;
 
 	canvasObj.drawRect({
 		name:"introScreenPopup",
@@ -695,7 +699,7 @@ function introScreenPopup(belowText){
 		fillStyle: '#FFD700',
 		strokeStyle: '#FFA500',
 		strokeWidth: 2,
-		x: popupX, y: popupY-(popupHeight/4),
+		x: popupX, y: popupY-(popupHeight/3),
 		fontSize: 70,
 		fontFamily: 'Arial, sans-serif',
 		fontStyle: 'bold',
@@ -708,20 +712,51 @@ function introScreenPopup(belowText){
 		fillStyle: '#FFFFFF',
 		strokeStyle: '#FFD700',
 		strokeWidth: 1,
-		x: popupX, y: popupY+(popupHeight/6),
+		x: popupX, y: popupY-(popupHeight/10),
 		fontSize: 25,
 		fontFamily: 'Arial, sans-serif',
 		text: (belowText == null)?'Press SPACE or Click to Start':belowText,
+		fromCenter: true
+	}).drawText({
+		name:"introScreenDifficulty",
+		layer:true,
+		groups:["introPopup"],
+		fillStyle: '#00FFFF',
+		x: popupX, y: popupY+(popupHeight/12),
+		fontSize: 20,
+		fontFamily: 'Arial, sans-serif',
+		text: 'Difficulty: ' + difficultyLevel + ' (Press 1-4 to change)',
+		fromCenter: true
+	}).drawText({
+		name:"introScreenDiffOptions",
+		layer:true,
+		groups:["introPopup"],
+		fillStyle: '#AAAAAA',
+		x: popupX, y: popupY+(popupHeight/6),
+		fontSize: 16,
+		fontFamily: 'Arial, sans-serif',
+		text: '1:Easy | 2:Normal | 3:Hard | 4:Expert',
 		fromCenter: true
 	}).drawText({
 		name:"introScreenInstructions",
 		layer:true,
 		groups:["introPopup"],
 		fillStyle: '#AAAAAA',
-		x: popupX, y: popupY+(popupHeight/3),
+		x: popupX, y: popupY+(popupHeight/3.5),
+		fontSize: 16,
+		fontFamily: 'Arial, sans-serif',
+		text: 'Arrow Keys/Mouse: Move | SPACE: Shoot | P: Pause',
+		fromCenter: true
+	}).drawText({
+		name:"introScreenHighScore",
+		layer:true,
+		groups:["introPopup"],
+		fillStyle: '#FFD700',
+		x: popupX, y: popupY+(popupHeight/2.5),
 		fontSize: 18,
 		fontFamily: 'Arial, sans-serif',
-		text: 'Use Arrow Keys or Mouse to Move | SPACE to Shoot',
+		fontStyle: 'bold',
+		text: 'High Score: ' + highScore,
 		fromCenter: true
 	});
 }
@@ -1102,19 +1137,48 @@ function getFocus(){
 function captureKeysNMouse(){
 	// keyboard handling.
 	canvasObj.on("keydown",function(key){
-		if(popupDisplay == true)
-			_prePopupCalls();
+		if(popupDisplay == true){
+			// Difficulty selection on intro screen
+			switch(key.keyCode){
+				case 49: // 1 key
+					difficultyLevel = "Easy";
+					canvasObj.removeLayerGroup("introPopup").drawLayers();
+					introScreenPopup();
+					break;
+				case 50: // 2 key
+					difficultyLevel = "Normal";
+					canvasObj.removeLayerGroup("introPopup").drawLayers();
+					introScreenPopup();
+					break;
+				case 51: // 3 key
+					difficultyLevel = "Hard";
+					canvasObj.removeLayerGroup("introPopup").drawLayers();
+					introScreenPopup();
+					break;
+				case 52: // 4 key
+					difficultyLevel = "Expert";
+					canvasObj.removeLayerGroup("introPopup").drawLayers();
+					introScreenPopup();
+					break;
+				default:
+					_prePopupCalls();
+					break;
+			}
+		}
 		else{
 			switch(key.keyCode){
 				case 37: 	// left arrow.
-				drawShip('left');
-				break;
+					if(!gamePaused) drawShip('left');
+					break;
 				case 39: 	// right arrow.
-				drawShip('right');
-				break;
+					if(!gamePaused) drawShip('right');
+					break;
 				case 32:	// space bar for shooting
-				_shootBullet();
-				break;
+					if(!gamePaused) _shootBullet();
+					break;
+				case 80:	// P key for pause
+					_togglePause();
+					break;
 			}
 		}
 	});
@@ -1122,8 +1186,8 @@ function captureKeysNMouse(){
 	// mouse handling.
 	canvasObj.mousemove(function(event){
 		if(popupDisplay == true)
-			_prePopupCalls();
-		else{
+			return; // Don't auto-start on mouse move
+		else if(!gamePaused){
 			// Smooth mouse movement
 			targetX = event.pageX;
 			if(!mouseX){
@@ -1144,9 +1208,64 @@ function captureKeysNMouse(){
 	canvasObj.click(function(event){
 		if(popupDisplay == true)
 			_prePopupCalls();
-		else{
+		else if(!gamePaused){
 			_shootBullet();
 		}
+	});
+}
+
+function _togglePause(){
+	if(!gameRunning) return;
+	
+	gamePaused = !gamePaused;
+	
+	if(gamePaused){
+		_showPauseScreen();
+	} else {
+		canvasObj.removeLayerGroup("pausePopup").drawLayers();
+	}
+}
+
+function _showPauseScreen(){
+	var popupX = width/2;
+	var popupY = height/2;
+	var popupWidth = width/2;
+	var popupHeight = height/3;
+	
+	canvasObj.drawRect({
+		name:"pausePopup",
+		layer:true,
+		groups:["pausePopup"],
+		fillStyle:'rgba(0, 0, 0, 0.9)',
+		strokeStyle:"#FFD700",
+		strokeWidth: 3,
+		x: popupX, y: popupY,
+		height:popupHeight,
+		width:popupWidth,
+		fromCenter:true
+	}).drawText({
+		name:"pauseTitle",
+		layer:true,
+		groups:["pausePopup"],
+		fillStyle: '#FFD700',
+		strokeStyle: '#FFA500',
+		strokeWidth: 2,
+		x: popupX, y: popupY-(popupHeight/4),
+		fontSize: 50,
+		fontFamily: 'Arial, sans-serif',
+		fontStyle: 'bold',
+		text: 'PAUSED',
+		fromCenter: true
+	}).drawText({
+		name:"pauseInstructions",
+		layer:true,
+		groups:["pausePopup"],
+		fillStyle: '#FFFFFF',
+		x: popupX, y: popupY+(popupHeight/6),
+		fontSize: 20,
+		fontFamily: 'Arial, sans-serif',
+		text: 'Press P to Resume',
+		fromCenter: true
 	});
 }
 
@@ -1355,6 +1474,7 @@ function _restartGame(){
 	lives = 3;
 	shipType = 1;
 	popupDisplay = true;
+	gamePaused = false;
 	mouseX = null;
 	targetX = null;
 	
@@ -1367,6 +1487,7 @@ function _restartGame(){
 	canvasObj.removeLayerGroup("explosion").drawLayers();
 	canvasObj.removeLayerGroup("levelUp").drawLayers();
 	canvasObj.removeLayerGroup("lifeLost").drawLayers();
+	canvasObj.removeLayerGroup("pausePopup").drawLayers();
 	
 	// Redraw ship at starting position
 	drawShip();
