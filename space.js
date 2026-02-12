@@ -297,14 +297,14 @@ function _runShip(){
 		}
 		score += speedDeviation;
 		if(score){
-			var levelLoval = parseInt((score/levelThreshold)+1,10);
+			var levelLocal = parseInt((score/levelThreshold)+1,10);
 			var scoreLocal = parseInt(score/10,10);
-			if(levelLoval != level){
-				if(maxLevel == levelLoval){
+			if(levelLocal != level){
+				if(maxLevel == levelLocal){
 					_gameOver("** You Rock !! Max Level Reached !!! **");
 					return;
 				}
-				level = levelLoval;
+				level = levelLocal;
 				speedDeviation += 2;
 				if(currentHardnessLevel < hardnessLevelSettings.length - 1){
 					currentHardnessLevel++;
